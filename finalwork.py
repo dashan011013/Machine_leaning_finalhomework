@@ -54,6 +54,7 @@ df = df.loc[ex]
 # print(df['time_stamp'].max())
 # print(df['time_stamp'].min())
 
+# -------------------------以上为数据预处理部分————————————————————————————
 
 # # 对所有用户的不同购买行为进行数量统计且求得不同购买行为的百分比,以柱状图进行展示
 # # 针对同一用户多次PV 这里使用nunique 进行去重
@@ -61,7 +62,6 @@ df = df.loc[ex]
 #     'user_id'].nunique().sum() * 100
 # plt.bar(s_persent.index, s_persent.values)
 # plt.show()
-
 
 # 发现用户点击量占据83%，而购买量仅占所有数据的3.3%,，用户从浏览到购买的转化#率只有2%，那是什么原因导致的转化率低呢？
 # 分析出每个用户对商品的不同行为
@@ -72,6 +72,7 @@ one_hot_df = pd.get_dummies(
 
 # 将用户ID和商品ID和one_hot_df 横向拼接
 user_item_behavior_df = pd.concat((df[['user_id', 'item_id']], one_hot_df), axis=1)
+user_item_behavior_df2 = pd.concat((df[['user_id', 'category_id']], one_hot_df), axis=1)
 
 user_item_behavior_df.head()
 
@@ -81,9 +82,11 @@ buy_sum = user_item_behavior_df.groupby(by='user_id')['buy'].sum()
 cart_sum = user_item_behavior_df.groupby(by='user_id')['cart'].sum()
 fav_sum = user_item_behavior_df.groupby(by='user_id')['fav'].sum()
 
+
 user_behavior_total_df = DataFrame(data=[pv_sum, buy_sum, cart_sum, fav_sum]).T  # T转置让行变列 列变行
 user_behavior_total_df.head()
 
+# print("--------------数量统计--------------")
 # 1.点击量:所有用户的总点击量
 pv_count = user_behavior_total_df['pv'].sum()
 print(pv_count)  # 895841
@@ -120,22 +123,30 @@ print(pv_fav_cart_buy_count)  # 33
 pv_loss_count = user_behavior_total_df.query('pv > 0 & buy ==0 & cart == 0 & fav ==0 ').shape[0]
 print(pv_loss_count)  # 434216
 #
-# print("--------------------------------------")
+# print("-------------转化率---------------")
 # 1.直接购买转化率：点击–购买 / 点击量
 print(pv_buy_count / pv_count)  # 0.01123190387579939
 
-# 2.加购购买转换率：点击 => 加购 + 购买 / 点击 => 加购
-print(pv_cart_buy_count / pv_cart_count)  # 0.01123190387579939
+# 2.加购转化率：点击–加购 / 点击量
+print(pv_cart_count / pv_count)  # 0.03508323463650358
 
-# 3.收藏购买转换率：点击 => 收藏 => 购买 / 点击 => 收藏
-print(pv_fav_buy_count / pv_fav_count)  # 0.02649086730373775
+# 3.收藏转化率：点击–收藏 / 点击量
+print(pv_fav_count / pv_count)  # 0.01845640018708677
 
-# 4.加购收藏购买转换率：点击 => 加购 + 收藏 => 购买 / 点击 => 加购 + 收藏
-print(pv_fav_cart_buy_count / pv_fav_cart_count)  # 0.03235294117647059
+# 4.加购收藏转化率：点击–加购收藏 / 点击量
+print(pv_fav_cart_count / pv_count)  # 0.0011385949069087037
 
 # 5.流失率：点击–流失 / 点击量
 print(pv_loss_count / pv_count)  # 0.4847020844100683
 
+# 6.加购购买转换率：点击 => 加购 + 购买 / 点击 => 加购
+print(pv_cart_buy_count / pv_cart_count)  # 0.03060867351808839
+
+# 7.收藏购买转换率：点击 => 收藏 => 购买 / 点击 => 收藏
+print(pv_fav_buy_count / pv_fav_count)  # 0.02649086730373775
+
+# 8.加购收藏购买转换率：点击 => 加购 + 收藏 => 购买 / 点击 => 加购 + 收藏
+print(pv_fav_cart_buy_count / pv_fav_cart_count)  # 0.03235294117647059
 
 # 直接购买转化率低于加购和收藏等行为之后的综合转换率，因此需要从产品交互界面、#营销机制等方面让用户去多加购，多收藏。
 # 转化率低的原因分析：
@@ -149,6 +160,14 @@ pv_sum_item_10_s = user_item_behavior_df.groupby(by='item_id')['pv'].sum().sort_
 # 购买量前10的商品
 buy_sum_item_10_s = user_item_behavior_df.groupby(by='item_id')['buy'].sum().sort_values().tail(10)
 # print(buy_sum_item_10_s)
+
+# 点击量前10的商品种类
+pv_sum_item_10_C = user_item_behavior_df2.groupby(by='category_id')['pv'].sum().sort_values().tail(10)
+# print(pv_sum_item_10_C)
+
+# 购买量前10的商品种类
+buy_sum_item_10_C = user_item_behavior_df2.groupby(by='category_id')['buy'].sum().sort_values().tail(10)
+# print(buy_sum_item_10_C)
 
 # 查看点击量高且购买量也高的商品类别个数
 # print(buy_sum_item_10_s.append(pv_sum_item_10_s).index.value_counts())  # 把两个series 拼一起 看那个商品出现在两个series里
